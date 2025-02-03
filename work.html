@@ -998,9 +998,6 @@
         </div>
 
         <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-        <div id="connection-status" style="position: fixed; top: 10px; right: 10px; background: #333; color: white; padding: 10px; border-radius: 5px;">
-            Connecting to database...
-        </div>
         <script src="supabase-client.js"></script>
         <script>
             // Initialize Supabase client
@@ -1010,8 +1007,7 @@
 
             // Function to update connection status
             function updateConnectionStatus(status) {
-                const statusElement = document.getElementById('connection-status');
-                statusElement.textContent = status;
+                // Removed connection status update
             }
 
             // Function to save data to Supabase
@@ -1076,7 +1072,7 @@
                 )
                 .subscribe(status => {
                     if (status === 'SUBSCRIBED') {
-                        updateConnectionStatus('Connected - Real-time updates active');
+                        // Removed connection status update
                     }
                 });
 
