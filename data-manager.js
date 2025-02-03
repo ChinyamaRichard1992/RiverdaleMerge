@@ -1,6 +1,12 @@
 // Data Management Functions
 let students = [];
 
+// Generate student number
+function generateStudentNumber() {
+    const timestamp = Date.now().toString();
+    return `STD${timestamp.slice(-6)}`;
+}
+
 // Initialize data
 async function initializeData() {
     try {
@@ -10,7 +16,7 @@ async function initializeData() {
             .order('timestamp', { ascending: false });
 
         if (error) throw error;
-        students = data;
+        students = data || [];
         updateStudentTable();
         updateDashboard();
         updateGradeSummary();
@@ -22,12 +28,20 @@ async function initializeData() {
 }
 
 // Save student data
-async function saveStudentData(studentData) {
+async function saveStudentData(formData) {
     try {
+        // Generate student number if not provided
+        if (!formData.studentNumber) {
+            formData.studentNumber = generateStudentNumber();
+        }
+
+        // Add timestamp
+        formData.timestamp = new Date().toISOString();
+
         // Add to Supabase
         const { data, error } = await supabase
             .from('students')
-            .insert([studentData])
+            .insert([formData])
             .select();
 
         if (error) throw error;
@@ -110,6 +124,25 @@ async function updateStudentData(studentNumber, updatedData) {
     }
 }
 
+// Show notification
+function showNotification(message, color) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.padding = '10px 20px';
+    notification.style.backgroundColor = color;
+    notification.style.color = 'white';
+    notification.style.borderRadius = '5px';
+    notification.style.zIndex = '1000';
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize data
@@ -122,11 +155,17 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const studentData = {
-                studentNumber: document.getElementById('studentNumber').value,
+                studentNumber: document.getElementById('studentNumber').value || generateStudentNumber(),
                 name: document.getElementById('studentName').value,
                 grade: parseInt(document.getElementById('grade').value),
                 term: document.getElementById('term').value,
                 gender: document.getElementById('gender').value,
+                fees: parseFloat(document.getElementById('fees').value),
+                date: document.getElementById('date').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                address: document.getElementById('address').value,
+                email: document.getElementById('email').value,
+                year: parseInt(document.getElementById('year').value),
                 timestamp: new Date().toISOString()
             };
 
