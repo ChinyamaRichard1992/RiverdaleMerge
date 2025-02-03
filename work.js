@@ -33,11 +33,21 @@ function initDB() {
     };
 }
 
-// Call initDB when the page loads
-window.onload = function() {
+// Keep only one event listener for DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
     initDB();
-    initializeDataPersistence();
-};
+    loadDataFromDB().then(() => {
+        updateDashboard();
+        updateStudentTable();
+        updateGradeSummary();
+        
+        // Add button event listeners here
+        document.getElementById('viewSummaryBtn')?.addEventListener('click', viewGradeSummary);
+        document.getElementById('hideSummaryBtn')?.addEventListener('click', hideGradeSummary);
+        document.getElementById('viewPaymentBtn')?.addEventListener('click', viewPaymentSearch);
+        document.getElementById('hidePaymentBtn')?.addEventListener('click', hidePaymentSearch);
+    });
+});
 
 function loadDataFromDB() {
     return new Promise((resolve, reject) => {
@@ -329,6 +339,7 @@ function updateDashboard() {
     updateGradeCounts();
     
     sendPaymentReminders();
+    updateDataVisuals(); // Add this line
 }
 
 function resetForm() {
@@ -3245,66 +3256,83 @@ setInterval(initializeAndUpdateChartsRealTime, 5000);
 
 // Initialize charts when data changes
 function updateDataVisuals() {
-    // Get current data
-    const genderData = {
-        male: students.filter(s => s.gender === 'Male').length,
-        female: students.filter(s => s.gender === 'Female').length
-    };
+    // Gender Distribution
+    const genderCtx = document.getElementById('genderChart')?.getContext('2d');
+    if (genderCtx) {
+        const genderData = {
+            male: students.filter(s => s.gender.toLowerCase() === 'male').length,
+            female: students.filter(s => s.gender.toLowerCase() === 'female').length
+        };
+        
+        new Chart(genderCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Male', 'Female'],
+                datasets: [{
+                    data: [genderData.male, genderData.female],
+                    backgroundColor: ['#87CEEB', '#FFB6C1']
+                }]
+            }
+        });
+    }
 
-    const gradeData = Array(9).fill(0);
-    students.forEach(s => {
-        if (s.grade >= 1 && s.grade <= 9) {
-            gradeData[s.grade - 1]++;
+    // Grade Distribution
+    const gradeCtx = document.getElementById('gradeChart')?.getContext('2d');
+    if (gradeCtx) {
+        const gradeData = {};
+        for (let i = 1; i <= 9; i++) {
+            gradeData[i] = students.filter(s => parseInt(s.grade) === i).length;
         }
-    });
+        
+        new Chart(gradeCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(gradeData),
+                datasets: [{
+                    label: 'Students per Grade',
+                    data: Object.values(gradeData),
+                    backgroundColor: '#87CEEB'
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
 
-    const termData = {
-        1: students.filter(s => s.term === '1').length,
-        2: students.filter(s => s.term === '2').length,
-        3: students.filter(s => s.term === '3').length
-    };
-
-    // Update Gender Chart
-    const genderCtx = document.getElementById('genderChart').getContext('2d');
-    if (window.genderChart) window.genderChart.destroy();
-    window.genderChart = new Chart(genderCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Male', 'Female'],
-            datasets: [{
-                data: [genderData.male, genderData.female],
-                backgroundColor: ['#36A2EB', '#FF6384']
-            }]
-        }
-    });
-
-    // Update Grade Chart
-    const gradeCtx = document.getElementById('gradeChart').getContext('2d');
-    if (window.gradeChart) window.gradeChart.destroy();
-    window.gradeChart = new Chart(gradeCtx, {
-        type: 'bar',
-        data: {
-            labels: ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9'],
-            datasets: [{
-                data: gradeData,
-                backgroundColor: '#36A2EB'
-            }]
-        }
-    });
-
-    // Update Term Chart
-    const termCtx = document.getElementById('termChart').getContext('2d');
-    if (window.termChart) window.termChart.destroy();
-    window.termChart = new Chart(termCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Term 1', 'Term 2', 'Term 3'],
-            datasets: [{
-                data: [termData[1], termData[2], termData[3]],
-                backgroundColor: '#4CAF50'
-            }]
-        }
-    });
+    // Term Distribution
+    const termCtx = document.getElementById('termChart')?.getContext('2d');
+    if (termCtx) {
+        const termData = {
+            'Term 1': students.filter(s => s.term === '1').length,
+            'Term 2': students.filter(s => s.term === '2').length,
+            'Term 3': students.filter(s => s.term === '3').length
+        };
+        
+        new Chart(termCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(termData),
+                datasets: [{
+                    data: Object.values(termData),
+                    backgroundColor: ['#87CEEB', '#90EE90', '#FFB6C1']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
 }
 
 // Update charts when data changes
@@ -5626,4 +5654,4 @@ document.addEventListener('DOMContentLoaded', function() {
             closeBtn.onclick = () => bulkOperationsModal.style.display = 'none';
         }
     }
-}
+});

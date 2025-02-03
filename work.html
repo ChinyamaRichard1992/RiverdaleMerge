@@ -724,11 +724,11 @@
         </div>
 
         <div class="action-buttons">
-            <a href="index.html" class="action-button salary-button">
+            <a href="index.html" class="action-button salary-button" style="width: 160px; margin-bottom: 30px;">
                 <i class="fas fa-money-bill-wave"></i>
                 PAYMENT OF SALARIES
             </a>
-            <a href="work.html" class="action-button return-button">
+            <a href="work.html" class="action-button return-button" style="width: 160px;">
                 <i class="fas fa-arrow-left"></i>
                 RETURN TO MAIN MENU
             </a>
@@ -779,35 +779,34 @@
                 <option value="3">Term 3</option>
             </select>
             <input type="number" id="yearInput" min="2024" max="2030" placeholder="Enter Year (2024-2030)">
-            <button onclick="checkGradePayments()">Check Payments</button>
-            <button onclick="addSchoolFees()">Add School Fees</button>
-            <button onclick="deleteSchoolFees()">Delete School Fees</button>
-            <button onclick="refreshDashboard()">Refresh</button>
-            <button onclick="saveDashboard()" style="background-color: #87CEEB;">Save Data</button>
-            <button onclick="deleteDashboard()" style="background-color: #dc3545;">Delete All</button>
+            <div class="button-group">
+                <button onclick="checkGradePayments()" style="padding: 6px 10px; font-size: 11px;">Check Payments</button>
+                <button onclick="addSchoolFees()" style="padding: 6px 10px; font-size: 11px;">Add School Fees</button>
+                <button onclick="deleteSchoolFees()" style="padding: 6px 10px; font-size: 11px;">Delete School Fees</button>
+                <button onclick="refreshDashboard()" style="padding: 6px 10px; font-size: 11px;">Refresh</button>
+                <button onclick="saveDashboard()" style="background-color: #87CEEB; padding: 6px 10px; font-size: 11px;">Save Data</button>
+                <button onclick="deleteDashboard()" style="background-color: #dc3545; padding: 6px 10px; font-size: 11px;">Delete All</button>
+            </div>
         </div>
 
-        
-        </div>
-
-        <div class="data-visualization">
-            <div class="charts-row">
+        <div class="visualization-section">
+            <div class="chart-grid">
                 <!-- Gender Distribution -->
                 <div class="chart-box">
                     <h3>Gender Distribution</h3>
-                    <canvas id="genderChart" width="300" height="200"></canvas>
+                    <canvas id="genderChart"></canvas>
                 </div>
                 
                 <!-- Grade Distribution -->
                 <div class="chart-box">
                     <h3>Grade Distribution</h3>
-                    <canvas id="gradeChart" width="300" height="200"></canvas>
+                    <canvas id="gradeChart"></canvas>
                 </div>
                 
                 <!-- Term Distribution -->
                 <div class="chart-box">
                     <h3>Term Distribution</h3>
-                    <canvas id="termChart" width="300" height="200"></canvas>
+                    <canvas id="termChart"></canvas>
                 </div>
             </div>
         </div>
