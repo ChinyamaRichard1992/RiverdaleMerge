@@ -4,22 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RIVERDALE ACADEMY</title>
-    <link rel = "stylesheet" href = "work.css">
+    <link rel="stylesheet" href="work.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  
- 
-    <script>
-        // Register the service worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('service-worker.js').then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                }).catch(function(error) {
-                    console.error('Service Worker registration failed:', error);
-                });
-            });
-        }
-    </script>
+    
+    <!-- Add libraries first -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Add our scripts in the correct order -->
+    <script src="supabase-client.js"></script>
+    <script src="data-manager.js"></script>
+    <script src="visualizations.js"></script>
+    <script src="work.js"></script>
 
     <!-- Add QR code library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -996,9 +992,6 @@
             </div>
         </div>
 
-        <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-        <script src="supabase-client.js"></script>
-        <script src="work.js"></script>
         <script>
             // Initialize Supabase client
             const supabaseUrl = 'https://cwqfyzjeoadyvfvtekef.supabase.co';
