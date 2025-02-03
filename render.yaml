@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: riverdale-merge
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /work.html
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    autoDeploy: true
+    healthCheckPath: /
+    plan: starter
+    region: frankfurt  # You can change this to the region closest to your users

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="status">Checking connection...</div>
+    <div id="result"></div>
+
+    <script>
+        const supabaseUrl = 'https://cwqfyzjeoadyvfvtekef.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3cWZ5emplb2FkeXZmdnRla2VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MjQyNjMsImV4cCI6MjA1NDEwMDI2M30.OX4xc3As06ua_4VFNmQLxwfPktfxGFIGAglt5ZRJbDw';
+        
+        async function testConnection() {
+            try {
+                const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // Test the connection by trying to fetch messages
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .limit(1);
+
+                if (error) throw error;
+                
+                document.getElementById('status').textContent = 'Connected successfully!';
+                document.getElementById('result').textContent = 'Found ' + data.length + ' messages';
+                
+                // Subscribe to changes
+                const channel = supabase
+                    .channel('messages')
+                    .on('postgres_changes', 
+                        { event: '*', schema: 'public', table: 'messages' },
+                        payload => {
+                            document.getElementById('result').textContent = 
+                                'Received real-time update: ' + JSON.stringify(payload);
+                        }
+                    )
+                    .subscribe();
+                
+            } catch (error) {
+                document.getElementById('status').textContent = 'Connection failed';
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        testConnection();
+    </script>
+</body>
+</html>
