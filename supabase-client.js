@@ -1,6 +1,6 @@
 // Initialize Supabase client
 const supabaseUrl = 'https://cwqfyzjeoadyvfvtekef.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3cWZ5emplb2FkeXZmdnRla2VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjU5MjU2NjMsImV4cCI6MjA1NDEwMDI2M30.OX4xc3As06ua_4VFNmQLxwfPktfxGFIGAglt5ZRJbDw';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3cWZ5emplb2FkeXZmdnRla2VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MjQyNjMsImV4cCI6MjA1NDEwMDI2M30.OX4xc3As06ua_4VFNmQLxwfPktfxGFIGAglt5ZRJbDw';
 const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
 // Save student data
@@ -13,10 +13,10 @@ async function saveStudent(studentData) {
 
         if (error) throw error;
         console.log('Student saved:', data);
-        return true;
+        return data[0];
     } catch (error) {
         console.error('Error saving student:', error);
-        return false;
+        return null;
     }
 }
 
@@ -38,41 +38,54 @@ async function loadStudents() {
 
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Handle form submission
-    const form = document.getElementById('studentForm');
-    if (form) {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const studentData = {
-                name: document.getElementById('studentName').value,
-                grade: parseInt(document.getElementById('grade').value),
-                term: document.getElementById('term').value || '1',
-                gender: document.getElementById('gender').value || 'Male',
-                timestamp: new Date().toISOString()
-            };
+    // Override the original addStudent function
+    window.addStudent = async function(event) {
+        event.preventDefault();
+        
+        const studentData = {
+            name: document.getElementById('studentName').value,
+            grade: parseInt(document.getElementById('grade').value),
+            term: document.getElementById('term').value,
+            gender: document.getElementById('gender').value,
+            timestamp: new Date().toISOString()
+        };
 
-            const saved = await saveStudent(studentData);
-            if (saved) {
-                // Use your existing displayStudent function
-                if (typeof displayStudent === 'function') {
-                    displayStudent(studentData);
-                }
-                // Clear the form
-                form.reset();
-            } else {
-                alert('Error saving student data. Please try again.');
+        const savedStudent = await saveStudent(studentData);
+        if (savedStudent) {
+            // Use the existing students array and displayStudent function
+            if (typeof students !== 'undefined') {
+                students.push(savedStudent);
             }
-        });
-    }
+            if (typeof displayStudent === 'function') {
+                displayStudent(savedStudent);
+            }
+            if (typeof calculateTotalStudents === 'function') {
+                calculateTotalStudents();
+            }
+            document.getElementById('studentForm').reset();
+        } else {
+            alert('Error saving student data. Please try again.');
+        }
+    };
 
     // Load existing students
-    loadStudents().then(students => {
-        students.forEach(student => {
+    loadStudents().then(loadedStudents => {
+        // Update the existing students array
+        if (typeof students !== 'undefined') {
+            students = loadedStudents;
+        }
+        
+        // Display each student using the existing function
+        loadedStudents.forEach(student => {
             if (typeof displayStudent === 'function') {
                 displayStudent(student);
             }
         });
+        
+        // Update totals
+        if (typeof calculateTotalStudents === 'function') {
+            calculateTotalStudents();
+        }
     });
 
     // Subscribe to real-time updates
@@ -82,11 +95,28 @@ document.addEventListener('DOMContentLoaded', () => {
             { event: '*', schema: 'public', table: 'students' },
             payload => {
                 if (payload.eventType === 'INSERT') {
+                    const newStudent = payload.new;
+                    // Update the existing students array
+                    if (typeof students !== 'undefined') {
+                        students.push(newStudent);
+                    }
+                    // Use the existing display function
                     if (typeof displayStudent === 'function') {
-                        displayStudent(payload.new);
+                        displayStudent(newStudent);
+                    }
+                    // Update totals
+                    if (typeof calculateTotalStudents === 'function') {
+                        calculateTotalStudents();
                     }
                 }
             }
         )
         .subscribe();
+
+    // Connect form submit to our addStudent function
+    const form = document.getElementById('studentForm');
+    if (form) {
+        form.removeEventListener('submit', window.addStudent); // Remove any existing listener
+        form.addEventListener('submit', window.addStudent);
+    }
 });
