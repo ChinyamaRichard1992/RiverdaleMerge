@@ -1,5 +1,6 @@
 // Data Management Functions
 let students = [];
+let isInitialized = false;
 
 // Generate student number
 function generateStudentNumber() {
@@ -9,27 +10,83 @@ function generateStudentNumber() {
 
 // Initialize data
 async function initializeData() {
+    if (isInitialized) return;
+    
     try {
-        const { data, error } = await supabase
+        // Load from Supabase
+        const { data: supabaseData, error: supabaseError } = await window.supabase
             .from('students')
             .select('*')
             .order('timestamp', { ascending: false });
 
-        if (error) throw error;
-        students = data || [];
+        if (supabaseError) throw supabaseError;
+
+        // Load from localStorage as backup
+        const localData = localStorage.getItem('students');
+        const localStudents = localData ? JSON.parse(localData) : [];
+
+        // Merge data, preferring Supabase data
+        const mergedStudents = [...(supabaseData || [])];
+        
+        // Add any local students that aren't in Supabase
+        localStudents.forEach(localStudent => {
+            if (!mergedStudents.find(s => s.studentNumber === localStudent.studentNumber)) {
+                mergedStudents.push(localStudent);
+            }
+        });
+
+        students = mergedStudents;
+        isInitialized = true;
+
+        // Update UI
         updateStudentTable();
         updateDashboard();
         updateGradeSummary();
-        updateAllVisualizations();
+        if (window.visualizations) {
+            window.visualizations.updateAll();
+        }
+
+        // Sync any local data to Supabase
+        if (localStudents.length > 0) {
+            syncLocalDataToSupabase(localStudents);
+        }
+
     } catch (error) {
         console.error('Error loading data:', error);
-        showNotification('Error loading data. Please refresh the page.', '#f44336');
+        
+        // Try loading from localStorage as fallback
+        try {
+            const localData = localStorage.getItem('students');
+            if (localData) {
+                students = JSON.parse(localData);
+                updateStudentTable();
+                updateDashboard();
+                updateGradeSummary();
+                if (window.visualizations) {
+                    window.visualizations.updateAll();
+                }
+                window.studentOperations.showNotification('Using offline data. Some features may be limited.', '#ff9800');
+            } else {
+                throw new Error('No offline data available');
+            }
+        } catch (localError) {
+            console.error('Error loading local data:', localError);
+            window.studentOperations.showNotification('Error loading data. Please refresh the page.', '#f44336');
+        }
     }
 }
 
 // Save student data
 async function saveStudentData(formData) {
     try {
+        // Validate required fields
+        const requiredFields = ['studentName', 'grade', 'term', 'gender'];
+        for (const field of requiredFields) {
+            if (!formData[field]) {
+                throw new Error(`${field} is required`);
+            }
+        }
+
         // Generate student number if not provided
         if (!formData.studentNumber) {
             formData.studentNumber = generateStudentNumber();
@@ -38,28 +95,44 @@ async function saveStudentData(formData) {
         // Add timestamp
         formData.timestamp = new Date().toISOString();
 
-        // Add to Supabase
-        const { data, error } = await supabase
-            .from('students')
-            .insert([formData])
-            .select();
+        // Try saving to Supabase
+        try {
+            const { data, error } = await window.supabase
+                .from('students')
+                .insert([formData])
+                .select();
 
-        if (error) throw error;
+            if (error) throw error;
 
-        // Update local data
-        students.unshift(data[0]);
+            // Update local data
+            students.unshift(data[0]);
+            
+            // Save to localStorage as backup
+            localStorage.setItem('students', JSON.stringify(students));
+            
+        } catch (supabaseError) {
+            console.error('Error saving to Supabase:', supabaseError);
+            
+            // Save to localStorage as fallback
+            students.unshift(formData);
+            localStorage.setItem('students', JSON.stringify(students));
+            
+            window.studentOperations.showNotification('Saved offline. Will sync when connection is restored.', '#ff9800');
+        }
         
         // Update UI
         updateStudentTable();
         updateDashboard();
         updateGradeSummary();
-        updateAllVisualizations();
+        if (window.visualizations) {
+            window.visualizations.updateAll();
+        }
         
-        showNotification('Student added successfully!', '#4CAF50');
+        window.studentOperations.showNotification('Student added successfully!', '#4CAF50');
         return true;
     } catch (error) {
         console.error('Error saving student:', error);
-        showNotification('Error saving student. Please try again.', '#f44336');
+        window.studentOperations.showNotification(error.message || 'Error saving student. Please try again.', '#f44336');
         return false;
     }
 }
@@ -67,27 +140,36 @@ async function saveStudentData(formData) {
 // Delete student
 async function deleteStudentData(studentNumber) {
     try {
-        const { error } = await supabase
-            .from('students')
-            .delete()
-            .eq('studentNumber', studentNumber);
+        // Try deleting from Supabase
+        try {
+            const { error } = await window.supabase
+                .from('students')
+                .delete()
+                .eq('studentNumber', studentNumber);
 
-        if (error) throw error;
+            if (error) throw error;
+        } catch (supabaseError) {
+            console.error('Error deleting from Supabase:', supabaseError);
+            window.studentOperations.showNotification('Delete will sync when connection is restored.', '#ff9800');
+        }
 
         // Update local data
         students = students.filter(s => s.studentNumber !== studentNumber);
+        localStorage.setItem('students', JSON.stringify(students));
         
         // Update UI
         updateStudentTable();
         updateDashboard();
         updateGradeSummary();
-        updateAllVisualizations();
+        if (window.visualizations) {
+            window.visualizations.updateAll();
+        }
         
-        showNotification('Student deleted successfully!', '#4CAF50');
+        window.studentOperations.showNotification('Student deleted successfully!', '#4CAF50');
         return true;
     } catch (error) {
         console.error('Error deleting student:', error);
-        showNotification('Error deleting student. Please try again.', '#f44336');
+        window.studentOperations.showNotification('Error deleting student. Please try again.', '#f44336');
         return false;
     }
 }
@@ -95,58 +177,96 @@ async function deleteStudentData(studentNumber) {
 // Update student
 async function updateStudentData(studentNumber, updatedData) {
     try {
-        const { data, error } = await supabase
-            .from('students')
-            .update(updatedData)
-            .eq('studentNumber', studentNumber)
-            .select();
-
-        if (error) throw error;
-
-        // Update local data
-        const index = students.findIndex(s => s.studentNumber === studentNumber);
-        if (index !== -1) {
-            students[index] = data[0];
+        // Validate required fields
+        const requiredFields = ['studentName', 'grade', 'term', 'gender'];
+        for (const field of requiredFields) {
+            if (!updatedData[field]) {
+                throw new Error(`${field} is required`);
+            }
         }
+
+        // Update timestamp
+        updatedData.timestamp = new Date().toISOString();
+
+        // Try updating in Supabase
+        try {
+            const { data, error } = await window.supabase
+                .from('students')
+                .update(updatedData)
+                .eq('studentNumber', studentNumber)
+                .select();
+
+            if (error) throw error;
+
+            // Update local data
+            const index = students.findIndex(s => s.studentNumber === studentNumber);
+            if (index !== -1) {
+                students[index] = data[0];
+            }
+        } catch (supabaseError) {
+            console.error('Error updating in Supabase:', supabaseError);
+            
+            // Update local data
+            const index = students.findIndex(s => s.studentNumber === studentNumber);
+            if (index !== -1) {
+                students[index] = { ...students[index], ...updatedData };
+            }
+            
+            window.studentOperations.showNotification('Updated offline. Will sync when connection is restored.', '#ff9800');
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('students', JSON.stringify(students));
         
         // Update UI
         updateStudentTable();
         updateDashboard();
         updateGradeSummary();
-        updateAllVisualizations();
+        if (window.visualizations) {
+            window.visualizations.updateAll();
+        }
         
-        showNotification('Student updated successfully!', '#4CAF50');
+        window.studentOperations.showNotification('Student updated successfully!', '#4CAF50');
         return true;
     } catch (error) {
         console.error('Error updating student:', error);
-        showNotification('Error updating student. Please try again.', '#f44336');
+        window.studentOperations.showNotification(error.message || 'Error updating student. Please try again.', '#f44336');
         return false;
     }
 }
 
-// Show notification
-function showNotification(message, color) {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.position = 'fixed';
-    notification.style.top = '20px';
-    notification.style.right = '20px';
-    notification.style.padding = '10px 20px';
-    notification.style.backgroundColor = color;
-    notification.style.color = 'white';
-    notification.style.borderRadius = '5px';
-    notification.style.zIndex = '1000';
-    document.body.appendChild(notification);
+// Sync local data to Supabase
+async function syncLocalDataToSupabase(localStudents) {
+    try {
+        for (const student of localStudents) {
+            try {
+                const { error } = await window.supabase
+                    .from('students')
+                    .upsert([student]);
 
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
+                if (error) throw error;
+            } catch (error) {
+                console.error('Error syncing student:', student.studentNumber, error);
+            }
+        }
+    } catch (error) {
+        console.error('Error syncing local data:', error);
+    }
 }
+
+// Export functions
+window.dataManager = {
+    init: initializeData,
+    save: saveStudentData,
+    update: updateStudentData,
+    delete: deleteStudentData,
+    sync: syncLocalDataToSupabase
+};
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize data
-    initializeData();
+    window.dataManager.init();
 
     // Set up form submission
     const form = document.getElementById('studentForm');
@@ -156,20 +276,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const studentData = {
                 studentNumber: document.getElementById('studentNumber').value || generateStudentNumber(),
-                name: document.getElementById('studentName').value,
+                studentName: document.getElementById('studentName').value,
                 grade: parseInt(document.getElementById('grade').value),
                 term: document.getElementById('term').value,
                 gender: document.getElementById('gender').value,
-                fees: parseFloat(document.getElementById('fees').value),
+                fees: parseFloat(document.getElementById('fees').value) || 0,
                 date: document.getElementById('date').value,
                 phoneNumber: document.getElementById('phoneNumber').value,
                 address: document.getElementById('address').value,
                 email: document.getElementById('email').value,
-                year: parseInt(document.getElementById('year').value),
-                timestamp: new Date().toISOString()
+                year: parseInt(document.getElementById('year').value)
             };
 
-            const success = await saveStudentData(studentData);
+            const success = await window.dataManager.save(studentData);
             if (success) {
                 form.reset();
             }
@@ -181,8 +300,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target && e.target.classList.contains('delete-btn')) {
             const studentNumber = e.target.getAttribute('data-student-number');
             if (confirm('Are you sure you want to delete this student?')) {
-                await deleteStudentData(studentNumber);
+                await window.dataManager.delete(studentNumber);
             }
+        }
+    });
+
+    // Set up offline sync
+    window.addEventListener('online', function() {
+        const localData = localStorage.getItem('students');
+        if (localData) {
+            const localStudents = JSON.parse(localData);
+            window.dataManager.sync(localStudents);
         }
     });
 });
