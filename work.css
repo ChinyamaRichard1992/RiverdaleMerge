@@ -68,63 +68,142 @@ button {
 
 /* Mobile-first responsive breakpoints */
 @media screen and (max-width: 768px) {
-    /* Adjustments for tablets and smaller screens */
-    body {
-        padding: 10px;
+    /* Improve container spacing */
+    .container {
+        padding: 5px;
+        margin: 0;
     }
 
-    h1 {
+    /* Adjust header for mobile */
+    .main-header {
+        padding: 15px;
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .school-logo {
+        width: 80px;
+        height: 80px;
+    }
+
+    .main-header h1 {
         font-size: 24px;
     }
 
-    h2 {
-        font-size: 20px;
+    .subtitle {
+        font-size: 18px;
     }
 
-    .count-box {
-        flex: 0 1 calc(33.33% - 10px);
+    /* Improve form elements */
+    input[type="text"], 
+    input[type="number"], 
+    input[type="date"], 
+    input[type="tel"], 
+    input[type="email"], 
+    select {
+        padding: 12px;
+        margin: 5px 0;
+        font-size: 16px;
     }
 
-    .button-group button {
-        flex: 1 1 calc(50% - 10px);
+    /* Better button layout */
+    .button-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
     }
 
-    /* Make tables responsive on mobile */
+    button {
+        width: 100%;
+        min-height: 44px;
+        margin: 0;
+    }
+
+    /* Improve table responsiveness */
+    .table-container {
+        margin: 10px 0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
     table {
         display: block;
         width: 100%;
     }
 
-    table thead {
-        display: none;
-    }
-
-    table tr {
-        margin-bottom: 10px;
-        display: block;
+    tr {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-bottom: 15px;
         border: 1px solid #ddd;
-    }
-
-    table td {
-        display: block;
-        text-align: right;
         padding: 10px;
-        position: relative;
-        padding-left: 50%;
     }
 
-    table td:before {
+    td, th {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px;
+        border: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    td:before {
         content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        width: 45%;
-        text-align: left;
         font-weight: bold;
+        margin-right: 10px;
+    }
+
+    /* Improve modal display */
+    .modal-content {
+        width: 95%;
+        margin: 10px auto;
+        padding: 15px;
+    }
+
+    /* Better search container */
+    .search-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    /* Improve grade summary display */
+    .grade-summary {
+        padding: 10px;
     }
 }
 
 @media screen and (max-width: 480px) {
-    /* Adjustments for mobile phones */
+    /* Further adjustments for smaller screens */
+    .main-header h1 {
+        font-size: 20px;
+    }
+
+    .subtitle {
+        font-size: 16px;
+    }
+
+    /* Stack all grid items */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Ensure no horizontal scroll */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Improve form readability */
+    .form-group label {
+        font-size: 14px;
+    }
+
+    /* Better spacing for small screens */
+    .dashboard {
+        padding: 10px;
+    }
+
     .count-box {
         flex: 0 1 calc(50% - 10px);
     }
@@ -339,7 +418,8 @@ input[type="submit"] {
         line-height: 1.6;
         margin: 0;
         padding: 20px;
-        background-color: #f4f4f4;
+        background-color: #f5f7fa;
+        color: #333;
     }
 
     .container {
@@ -347,6 +427,11 @@ input[type="submit"] {
         margin: auto;
         overflow: hidden;
         padding: 0 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin: 20px auto;
     }
 
     h1, h2 {
@@ -1737,4 +1822,104 @@ input[type="submit"] {
         .salary-summary {
             grid-template-columns: 1fr;
         }
+    }
+
+    /* Distribution charts styling */
+    .chart-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin: 15px 0;
+    }
+
+    .distribution-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    .distribution-chart {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .distribution-chart h3 {
+        color: #333;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    /* Distribution bars styling */
+    .distribution-bar {
+        background: #e9ecef;
+        border-radius: 4px;
+        margin: 8px 0;
+        overflow: hidden;
+    }
+
+    .distribution-fill {
+        background: #87CEEB;
+        height: 24px;
+        transition: width 0.3s ease;
+    }
+
+    .distribution-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    /* Responsive adjustments for distribution charts */
+    @media screen and (max-width: 768px) {
+        .distribution-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .distribution-chart {
+            margin-bottom: 15px;
+        }
+    }
+
+    /* Visualization Section */
+    .visualization-section {
+        margin: 20px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .chart-container {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .chart-box {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .chart-box h3 {
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+        font-size: 1.2em;
+        text-align: center;
+    }
+
+    .chart-box canvas {
+        width: 100% !important;
+        height: 300px !important;
     }
