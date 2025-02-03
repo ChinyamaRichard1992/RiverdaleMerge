@@ -6,7 +6,7 @@ services:
     staticPublishPath: .
     pullRequestPreviewsEnabled: true
     routes:
-      - type: rewrite
+      - type: redirect
         source: /
         destination: /work.html
       - type: rewrite
